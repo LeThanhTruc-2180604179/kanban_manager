@@ -4,21 +4,22 @@ import Header from './components/Header';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import DeleteTaskModal from './components/DeleteTaskModal';
+import SubtaskCompletionModal from './components/SubtaskCompletionModal';
 import { useTheme } from './hooks/useTheme';
 import { useBoard } from './hooks/useBoard';
 
 export default function App() {
   const { darkMode, toggleDarkMode } = useTheme();
-  const { 
-    boards: initialBoards, 
-    currentBoard, 
-    setCurrentBoard, 
+  const {
+    boards: initialBoards,
+    currentBoard,
+    setCurrentBoard,
     addBoard,
     updateBoard,
     deleteBoard: deleteBoardFromHook,
-    columns, 
-    tasks, 
-    addTask, 
+    columns,
+    tasks,
+    addTask,
     updateTask,
     deleteTask,
     moveTask,
@@ -26,7 +27,7 @@ export default function App() {
     updateColumn,
     deleteColumn
   } = useBoard();
-  
+
   const [boards, setBoards] = useState(initialBoards);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -34,6 +35,8 @@ export default function App() {
   const [newTaskColumnId, setNewTaskColumnId] = useState(null);
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     setBoards(initialBoards);
@@ -42,18 +45,22 @@ export default function App() {
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-  
+
   const openTaskModal = (columnId = null) => {
+    if (boards.length === 0) {
+      alert('Vui lòng tạo một bảng trước khi thêm nhiệm vụ.');
+      return;
+    }
     setNewTaskColumnId(columnId);
     setIsTaskModalOpen(true);
   };
-  
+
   const closeTaskModal = () => {
     setIsTaskModalOpen(false);
     setEditingTask(null);
     setNewTaskColumnId(null);
   };
-  
+
   const handleSaveTask = (task) => {
     if (columns.length === 0) {
       alert('Vui lòng tạo ít nhất một cột trước khi thêm task.');
@@ -66,13 +73,13 @@ export default function App() {
       addTask({
         ...task,
         boardId: currentBoard,
-        status: newTaskColumnId || columns[0]?.id, // Bỏ 'todo' để đảm bảo status là id hợp lệ
+        status: newTaskColumnId || columns[0]?.id,
         position: tasks.filter(t => t.status === (newTaskColumnId || columns[0]?.id) && t.boardId === currentBoard).length
       });
     }
     closeTaskModal();
   };
-  
+
   const handleDeleteBoard = (boardId) => {
     deleteBoardFromHook(boardId);
     setBoards(prevBoards => prevBoards.filter(board => board.id !== boardId));
@@ -91,12 +98,27 @@ export default function App() {
     setIsDeleteTaskModalOpen(false);
     setTaskToDelete(null);
   };
-  
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleOpenSubtaskModal = (task) => {
+    setSelectedTask(task);
+    setIsSubtaskModalOpen(true);
+  };
+
+  const handleCloseSubtaskModal = () => {
+    setIsSubtaskModalOpen(false);
+    setSelectedTask(null);
+  };
+
   const currentBoardName = boards.find(b => b.id === currentBoard)?.name || '';
-  
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-      <Sidebar 
+      <Sidebar
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
         boards={boards}
@@ -104,18 +126,16 @@ export default function App() {
         setCurrentBoard={setCurrentBoard}
         addBoard={addBoard}
         updateBoard={updateBoard}
-        darkMode={darkMode}
-        toggleDarkMode={toggleDarkMode}
         onDeleteBoard={handleDeleteBoard}
       />
-      
-      <div 
+
+      <div
         className="transition-all duration-300 bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col"
-        style={{ 
+        style={{
           marginLeft: sidebarOpen ? '16rem' : '0'
         }}
       >
-        <Header 
+        <Header
           className="fixed top-0 right-0 w-full z-10"
           style={{
             width: `calc(100% - ${sidebarOpen ? '16rem' : '0rem'})`
@@ -123,31 +143,41 @@ export default function App() {
           sidebarOpen={sidebarOpen}
           toggleSidebar={toggleSidebar}
           currentBoardName={currentBoardName}
-          openTaskModal={openTaskModal}
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
         />
-        
+
         <div className="mt-16">
           <main className="p-6 overflow-x-auto">
-            <div className="inline-flex space-x-6 min-w-max">
-              <Board 
-                tasks={tasks}
-                columns={columns}
-                moveTask={moveTask}
-                openTaskModal={openTaskModal}
-                setEditingTask={setEditingTask}
-                addColumn={addColumn}
-                updateColumn={updateColumn}
-                currentBoard={currentBoard}
-                onDeleteTask={handleDeleteTask}
-                deleteColumn={deleteColumn}
-              />
-            </div>
+            {boards.length === 0 ? (
+              <div className="text-center text-gray-600 dark:text-gray-300">
+                <p className="text-lg mb-4">Chưa có bảng nào. Vui lòng tạo một bảng mới từ thanh bên.</p>
+              </div>
+            ) : (
+              <div className="inline-flex space-x-6 min-w-max">
+                <Board
+                  tasks={tasks}
+                  columns={columns}
+                  moveTask={moveTask}
+                  openTaskModal={openTaskModal}
+                  setEditingTask={setEditingTask}
+                  addColumn={addColumn}
+                  updateColumn={updateColumn}
+                  currentBoard={currentBoard}
+                  onDeleteTask={handleDeleteTask}
+                  deleteColumn={deleteColumn}
+                  updateTask={updateTask}
+                  onEditTask={handleEditTask}
+                  onOpenSubtaskModal={handleOpenSubtaskModal}
+                />
+              </div>
+            )}
           </main>
         </div>
       </div>
-      
+
       {isTaskModalOpen && (
-        <TaskModal 
+        <TaskModal
           isOpen={isTaskModalOpen}
           onClose={closeTaskModal}
           onSave={handleSaveTask}
@@ -168,6 +198,16 @@ export default function App() {
           }}
           onDelete={handleConfirmDeleteTask}
           taskTitle={taskToDelete?.title || ''}
+        />
+      )}
+
+      {isSubtaskModalOpen && (
+        <SubtaskCompletionModal
+          isOpen={isSubtaskModalOpen}
+          onClose={handleCloseSubtaskModal}
+          task={selectedTask}
+          onUpdate={updateTask}
+          columns={columns}
         />
       )}
     </div>

@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState, useEffect, useRef } from 'react';
 
-export default function Task({ task, onClick, columnId, isOverlay, index, totalTasks, onDelete }) {
+export default function Task({ task, onClick, columnId, isOverlay, index, totalTasks, onDelete, onEdit }) {
   const {
     attributes,
     listeners,
@@ -24,6 +24,7 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const menuButtonRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
   const style = {
     transform: CSS.Transform.toString(
@@ -63,6 +64,17 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
     };
   }, [isMenuOpen]);
 
+  // Calculate menu position when opened
+  useEffect(() => {
+    if (isMenuOpen && menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 5,
+        left: rect.right - 96, // 24px (menu width) with right alignment
+      });
+    }
+  }, [isMenuOpen]);
+
   return (
     <div
       ref={setNodeRef}
@@ -76,6 +88,7 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
         ${isOverlay ? 'shadow-xl ring-2 ring-blue-500 cursor-grabbing' : 'cursor-grab'}
         active:cursor-grabbing
         touch-manipulation
+        min-h-[80px] max-h-40 overflow-hidden
       `}
       data-column-id={columnId}
       role="button"
@@ -100,18 +113,23 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
           onClick();
         }}
       >
-        <h3 className="text-sm font-medium text-gray-800 dark:text-white mb-2">
-          {task.title}
-        </h3>
-        <div className="flex items-center mt-2">
+        <div className="relative">
+          <h3
+            className="text-sm font-medium text-gray-800 dark:text-white mb-2 pr-6 break-words line-clamp-3"
+            title={task.title} // Tooltip with full title on hover
+          >
+            {task.title}
+          </h3>
+        </div>
+        <div className="mt-2">
           <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
             <div
               className="bg-blue-500 h-1.5 rounded-full"
               style={{ width: `${totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0}%` }}
             ></div>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-            {completedSubtasks}/{totalSubtasks}
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
+            {completedSubtasks}/{totalSubtasks} subtasks
           </span>
         </div>
       </div>
@@ -129,23 +147,38 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
             <div className="w-3 h-0.5 bg-gray-500 mb-0.5"></div>
             <div className="w-3 h-0.5 bg-gray-500"></div>
           </button>
-          {isMenuOpen && (
-            <div
-              ref={menuRef}
-              className="absolute top-6 right-0 w-24 bg-gray-800 rounded shadow-lg z-10 opacity-100"
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMenuOpen(false);
-                  onDelete(task);
-                }}
-                className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 rounded"
-              >
-                Delete
-              </button>
-            </div>
-          )}
+       {isMenuOpen && (
+  <div
+    ref={menuRef}
+    className="w-24 bg-gray-900 rounded shadow-lg z-50"
+    style={{
+      position: 'fixed',
+      top: `${menuPosition.top}px`,
+      left: `${menuPosition.left}px`,
+    }}
+  >
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsMenuOpen(false);
+        onEdit(task);
+      }}
+      className="w-full text-left px-3 py-1 text-sm text-blue-400 hover:bg-gray-800 rounded"
+    >
+      Edit
+    </button>
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsMenuOpen(false);
+        onDelete(task);
+      }}
+      className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-800 rounded"
+    >
+      Delete
+    </button>
+  </div>
+)}
         </div>
       </div>
     </div>

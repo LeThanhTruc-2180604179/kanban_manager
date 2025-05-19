@@ -40,3 +40,8 @@
 .read-the-docs {
   color: #888;
 }
+.text-overflow-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

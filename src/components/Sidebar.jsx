@@ -9,8 +9,6 @@ export default function Sidebar({
   setCurrentBoard, 
   addBoard,
   updateBoard,
-  darkMode,
-  toggleDarkMode,
   onDeleteBoard
 }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -181,18 +179,6 @@ export default function Sidebar({
       </div>
       
       <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center justify-between p-3 bg-gray-800 rounded">
-          <span>Dark Mode</span>
-          <button 
-            className={`w-10 h-5 rounded-full ${darkMode ? 'bg-purple-600' : 'bg-gray-400'} flex items-center transition-all duration-300`}
-            onClick={toggleDarkMode}
-          >
-            <span 
-              className={`w-4 h-4 bg-white rounded-full transform transition-all duration-300 ${darkMode ? 'translate-x-5' : 'translate-x-1'}`}
-            />
-          </button>
-        </div>
-        
         <button 
           className="w-full mt-4 py-2 flex items-center justify-center rounded hover:bg-gray-700 text-gray-400"
           onClick={toggleSidebar}

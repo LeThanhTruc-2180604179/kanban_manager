@@ -5,7 +5,7 @@ import Task from './Task';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export default function Column({ column, tasks, openTaskModal, setEditingTask, updateColumn, columns, isOverlay, onDeleteTask, onDeleteColumn }) {
+export default function Column({ column, tasks, openTaskModal, setEditingTask, updateColumn, columns, isOverlay, onDeleteTask, onDeleteColumn, updateTask, onEditTask, onOpenSubtaskModal }) {
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: `${column.id}-droppable`,
   });
@@ -95,7 +95,7 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
   };
 
   const handleDeleteColumn = () => {
-    if (columns.length <= 1) return; // Đã có kiểm tra logic ở đây, nhưng giao diện sẽ được cập nhật
+    if (columns.length <= 1) return;
     setIsMenuOpen(false);
     onDeleteColumn(column);
   };
@@ -120,7 +120,7 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
     return [...tasks].sort((a, b) => (a.position || 0) - (b.position || 0));
   }, [tasks]);
 
-  const isLastColumn = columns.length <= 1; // Kiểm tra nếu chỉ còn 1 cột
+  const isLastColumn = columns.length <= 1;
 
   return (
     <div
@@ -194,7 +194,7 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
               >
                 <button
                   onClick={handleDeleteColumn}
-                  disabled={isLastColumn} // Vô hiệu hóa nút khi chỉ còn 1 cột
+                  disabled={isLastColumn}
                   className={`w-full text-left px-3 py-1 text-sm rounded group relative ${
                     isLastColumn
                       ? 'text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed'
@@ -203,7 +203,6 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
                   aria-label="Delete column"
                 >
                   Delete
-               
                 </button>
               </div>
             )}
@@ -217,14 +216,12 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
               <Task
                 key={task.id}
                 task={task}
-                onClick={() => {
-                  setEditingTask(task);
-                  openTaskModal();
-                }}
+                onClick={() => onOpenSubtaskModal(task)}
                 columnId={column.id}
                 index={index}
                 totalTasks={sortedTasks.length}
                 onDelete={onDeleteTask}
+                onEdit={onEditTask}
               />
             ))
           ) : (

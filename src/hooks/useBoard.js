@@ -5,7 +5,7 @@ import { initialBoards, initialTasks } from '../data/initialData';
 export function useBoard() {
   const [boards, setBoards] = useLocalStorage('boards', initialBoards);
   const [tasks, setTasks] = useLocalStorage('tasks', initialTasks);
-  const [currentBoard, setCurrentBoard] = useLocalStorage('currentBoard', boards[0]?.id || 'main');
+  const [currentBoard, setCurrentBoard] = useLocalStorage('currentBoard', '');
 
   const currentBoardData = boards.find(board => board.id === currentBoard) || { columns: [] };
   const currentColumns = currentBoardData.columns || [];
@@ -16,7 +16,8 @@ export function useBoard() {
       { id: `col-${newBoard.id}-progress`, name: 'Progress' },
       { id: `col-${newBoard.id}-done`, name: 'Done' },
     ];
-    setBoards([...boards, { ...newBoard, columns: newColumns }]);
+    const updatedBoards = [...boards, { ...newBoard, columns: newColumns }];
+    setBoards(updatedBoards);
     setCurrentBoard(newBoard.id);
   };
 
@@ -26,7 +27,9 @@ export function useBoard() {
 
   const deleteBoard = (id) => {
     setBoards(boards.filter(board => board.id !== id));
-    if (currentBoard === id) setCurrentBoard(boards[0]?.id || '');
+    if (currentBoard === id) {
+      setCurrentBoard(boards[0]?.id || '');
+    }
   };
 
   const addTask = (newTask) => {
@@ -59,11 +62,10 @@ export function useBoard() {
       });
       setTasks(updatedTasks);
     } else {
-      // Xử lý cho trường hợp kéo thả đơn lẻ (có thể cần cải tiến, nhưng hiện tại giữ nguyên)
       const taskIndex = tasks.findIndex(t => t.id === taskIdOrTasks);
       if (taskIndex !== -1) {
         const updatedTasks = [...tasks];
-        updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], position: 0 }; // Cải tiến sau nếu cần
+        updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], position: 0 };
         setTasks(updatedTasks);
       }
     }

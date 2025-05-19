@@ -5,17 +5,20 @@ import Column from './Column';
 import Task from './Task';
 import DeleteColumnModal from './DeleteColumnModal';
 
-export default function Board({ 
-  columns, 
-  tasks, 
-  moveTask, 
-  openTaskModal, 
-  setEditingTask, 
-  addColumn, 
-  updateColumn, 
-  currentBoard, 
-  onDeleteTask, 
-  deleteColumn
+export default function Board({
+  columns,
+  tasks,
+  moveTask,
+  openTaskModal,
+  setEditingTask,
+  addColumn,
+  updateColumn,
+  currentBoard,
+  onDeleteTask,
+  deleteColumn,
+  updateTask,
+  onEditTask,
+  onOpenSubtaskModal
 }) {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
@@ -34,26 +37,26 @@ export default function Board({
 
   const customCollisionDetection = (args) => {
     const { active, droppableContainers, collisionRect } = args;
-    
+
     const activeColumn = columns.find(col => col.id === active.id);
-    
+
     if (activeColumn) {
       const pointerCollisions = pointerWithin(args);
-      
+
       if (pointerCollisions.length > 0) {
         const columnIds = columns.map(col => col.id);
         const columnCollisions = pointerCollisions.filter(
           collision => columnIds.includes(collision.id)
         );
-        
+
         if (columnCollisions.length > 0) {
           return [columnCollisions[0]];
         }
       }
-      
+
       return closestCorners(args);
     }
-    
+
     return rectIntersection(args);
   };
 
@@ -83,7 +86,6 @@ export default function Board({
     const activeId = active.id;
     const overId = over.id.toString();
 
-    // Xử lý kéo thả cột
     const activeColumnData = columns.find(col => col.id === activeId);
     if (activeColumnData) {
       const overColumnData = columns.find(col => col.id === overId);
@@ -97,7 +99,6 @@ export default function Board({
       return;
     }
 
-    // Xử lý kéo thả task
     const activeTaskData = tasks.find(t => t.id === activeId);
     if (!activeTaskData) {
       setActiveTask(null);
@@ -120,13 +121,12 @@ export default function Board({
         const overIndex = destinationTasks.findIndex(t => t.id === overId);
         newPosition = overIndex >= 0 ? overIndex : destinationTasks.length;
         if (activeTaskData.status === newStatus) {
-          // Kéo thả trong cùng cột, cập nhật vị trí dựa trên overIndex
           const oldIndex = tasks.findIndex(t => t.id === activeId);
           const newIndex = tasks.findIndex(t => t.id === overId);
           if (oldIndex !== -1 && newIndex !== -1) {
             const movedTasks = arrayMove(tasks, oldIndex, newIndex).map((task, idx) => ({
               ...task,
-              position: idx, // Cập nhật position theo chỉ số mới
+              position: idx,
             }));
             moveTask(movedTasks, currentBoard);
             setActiveTask(null);
@@ -136,7 +136,6 @@ export default function Board({
       }
     }
 
-    // Kéo thả sang cột khác hoặc vị trí mới
     const updatedTasks = tasks.map(t =>
       t.id === activeId ? { ...t, status: newStatus, position: newPosition } : t
     );
@@ -207,10 +206,13 @@ export default function Board({
           isOverlay={false}
           onDeleteTask={onDeleteTask}
           onDeleteColumn={handleDeleteColumn}
+          updateTask={updateTask}
+          onEditTask={onEditTask}
+          onOpenSubtaskModal={onOpenSubtaskModal}
         />
       );
     });
-  }, [columns, tasks, openTaskModal, setEditingTask, updateColumn, onDeleteTask]);
+  }, [columns, tasks, openTaskModal, setEditingTask, updateColumn, onDeleteTask, updateTask, onEditTask, onOpenSubtaskModal]);
 
   return (
     <DndContext
@@ -280,7 +282,7 @@ export default function Board({
       </SortableContext>
       <DragOverlay>
         {activeTask ? (
-          <Task task={activeTask} isOverlay onClick={() => {}} columnId={activeTask.status} />
+          <Task task={activeTask} isOverlay onClick={() => {}} columnId={activeTask.status} onEdit={onEditTask} onDelete={() => {}} />
         ) : activeColumn ? (
           <Column
             column={activeColumn}
@@ -292,6 +294,9 @@ export default function Board({
             isOverlay
             onDeleteTask={onDeleteTask}
             onDeleteColumn={handleDeleteColumn}
+            updateTask={updateTask}
+            onEditTask={onEditTask}
+            onOpenSubtaskModal={onOpenSubtaskModal}
           />
         ) : null}
       </DragOverlay>
