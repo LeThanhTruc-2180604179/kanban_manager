@@ -5,8 +5,11 @@ import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import DeleteTaskModal from './components/DeleteTaskModal';
 import SubtaskCompletionModal from './components/SubtaskCompletionModal';
+import UserList from './components/UserList';
+import AddUserModal from './components/AddUserModal'; // Import AddUserModal
 import { useTheme } from './hooks/useTheme';
 import { useBoard } from './hooks/useBoard';
+
 
 export default function App() {
   const { darkMode, toggleDarkMode } = useTheme();
@@ -25,7 +28,9 @@ export default function App() {
     moveTask,
     addColumn,
     updateColumn,
-    deleteColumn
+    deleteColumn,
+    users,
+    addUserToBoard
   } = useBoard();
 
   const [boards, setBoards] = useState(initialBoards);
@@ -37,6 +42,8 @@ export default function App() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showUserList, setShowUserList] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false); // State for AddUserModal
 
   useEffect(() => {
     setBoards(initialBoards);
@@ -114,6 +121,14 @@ export default function App() {
     setSelectedTask(null);
   };
 
+  const handleViewTeam = () => {
+    setShowUserList(true);
+  };
+
+  const handleBackToBoard = () => {
+    setShowUserList(false);
+  };
+
   const currentBoardName = boards.find(b => b.id === currentBoard)?.name || '';
 
   return (
@@ -153,6 +168,13 @@ export default function App() {
               <div className="text-center text-gray-600 dark:text-gray-300">
                 <p className="text-lg mb-4">Chưa có bảng nào. Vui lòng tạo một bảng mới từ thanh bên.</p>
               </div>
+            ) : showUserList ? (
+              <UserList
+                users={users}
+                onBack={handleBackToBoard}
+                onAddUser={addUserToBoard}
+                setIsAddUserModalOpen={setIsAddUserModalOpen} // Pass modal control
+              />
             ) : (
               <div className="inline-flex space-x-6 min-w-max">
                 <Board
@@ -169,6 +191,9 @@ export default function App() {
                   updateTask={updateTask}
                   onEditTask={handleEditTask}
                   onOpenSubtaskModal={handleOpenSubtaskModal}
+                  users={users}
+                  addUserToBoard={addUserToBoard}
+                  onViewTeam={handleViewTeam}
                 />
               </div>
             )}
@@ -186,6 +211,7 @@ export default function App() {
           defaultStatus={newTaskColumnId}
           tasks={tasks}
           currentBoard={currentBoard}
+          users={users}
         />
       )}
 
@@ -210,6 +236,15 @@ export default function App() {
           columns={columns}
         />
       )}
+
+      {isAddUserModalOpen && (
+        <AddUserModal
+          isOpen={isAddUserModalOpen}
+          onClose={() => setIsAddUserModalOpen(false)}
+          onAddUser={addUserToBoard}
+        />
+      )}
     </div>
+ 
   );
 }

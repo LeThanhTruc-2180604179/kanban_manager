@@ -7,8 +7,9 @@ export function useBoard() {
   const [tasks, setTasks] = useLocalStorage('tasks', initialTasks);
   const [currentBoard, setCurrentBoard] = useLocalStorage('currentBoard', '');
 
-  const currentBoardData = boards.find(board => board.id === currentBoard) || { columns: [] };
+  const currentBoardData = boards.find(board => board.id === currentBoard) || { columns: [], users: [] };
   const currentColumns = currentBoardData.columns || [];
+  const currentUsers = currentBoardData.users || [];
 
   const addBoard = (newBoard) => {
     const newColumns = [
@@ -16,7 +17,7 @@ export function useBoard() {
       { id: `col-${newBoard.id}-progress`, name: 'Progress' },
       { id: `col-${newBoard.id}-done`, name: 'Done' },
     ];
-    const updatedBoards = [...boards, { ...newBoard, columns: newColumns }];
+    const updatedBoards = [...boards, { ...newBoard, columns: newColumns, users: [] }];
     setBoards(updatedBoards);
     setCurrentBoard(newBoard.id);
   };
@@ -34,11 +35,20 @@ export function useBoard() {
 
   const addTask = (newTask) => {
     const columnTasks = tasks.filter(t => t.status === newTask.status && t.boardId === currentBoard);
-    setTasks([...tasks, { ...newTask, position: columnTasks.length, boardId: currentBoard }]);
+    setTasks([...tasks, { 
+      ...newTask, 
+      position: columnTasks.length, 
+      boardId: currentBoard,
+      assignedUsers: newTask.assignedUsers || [] // Ensure assignedUsers is included
+    }]);
   };
 
   const updateTask = (id, updatedTask) => {
-    setTasks(tasks.map(task => task.id === id ? { ...task, ...updatedTask } : task));
+    setTasks(tasks.map(task => task.id === id ? { 
+      ...task, 
+      ...updatedTask,
+      assignedUsers: updatedTask.assignedUsers || [] // Ensure assignedUsers is preserved
+    } : task));
   };
 
   const deleteTask = (id) => {
@@ -120,6 +130,14 @@ export function useBoard() {
     return true;
   };
 
+  const addUserToBoard = (email) => {
+    setBoards(boards.map(board =>
+      board.id === currentBoard
+        ? { ...board, users: [...(board.users || []), { id: `user-${Date.now()}`, email }] }
+        : board
+    ));
+  };
+
   const boardTasks = tasks
     .filter(task => task.boardId === currentBoard)
     .sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -139,6 +157,8 @@ export function useBoard() {
     moveTask,
     addColumn,
     updateColumn,
-    deleteColumn
+    deleteColumn,
+    users: currentUsers,
+    addUserToBoard
   };
 }

@@ -4,6 +4,7 @@ import { arrayMove, SortableContext, horizontalListSortingStrategy } from '@dnd-
 import Column from './Column';
 import Task from './Task';
 import DeleteColumnModal from './DeleteColumnModal';
+import AddUserModal from './AddUserModal';
 
 export default function Board({
   columns,
@@ -18,7 +19,10 @@ export default function Board({
   deleteColumn,
   updateTask,
   onEditTask,
-  onOpenSubtaskModal
+  onOpenSubtaskModal,
+  users,
+  addUserToBoard,
+  onViewTeam
 }) {
   const [activeTask, setActiveTask] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
@@ -27,7 +31,11 @@ export default function Board({
   const [errorMessage, setErrorMessage] = useState('');
   const [isDeleteColumnModalOpen, setIsDeleteColumnModalOpen] = useState(false);
   const [columnToDelete, setColumnToDelete] = useState(null);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const formRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -177,16 +185,14 @@ export default function Board({
         setNewColumnName('');
         setErrorMessage('');
       }
+      if (isMenuOpen && menuRef.current && !menuRef.current.contains(event.target) && !menuButtonRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
     };
 
-    if (isAddingColumn) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isAddingColumn]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isAddingColumn, isMenuOpen]);
 
   const columnItems = useMemo(() => columns.map(col => col.id), [columns]);
   const renderColumns = useMemo(() => {
@@ -222,103 +228,159 @@ export default function Board({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <SortableContext items={columnItems} strategy={horizontalListSortingStrategy}>
-        <div className="flex space-x-4 overflow-x-auto board-container">
-          {renderColumns}
-          <div className="w-64 flex-shrink-0">
-            {isAddingColumn ? (
-              <div ref={formRef} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                <input
-                  type="text"
-                  value={newColumnName}
-                  onChange={(e) => {
-                    setNewColumnName(e.target.value);
-                    setErrorMessage('');
-                  }}
-                  placeholder="Nhập tên cột..."
-                  className="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                  autoFocus
-                  aria-label="Nhập tên cột mới"
-                />
-                <div className="flex justify-end space-x-2 mt-2">
-                  <button
-                    onClick={handleAddColumn}
-                    className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
-                    aria-label="Xác nhận thêm cột"
-                  >
-                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsAddingColumn(false);
-                      setNewColumnName('');
+      <div className="flex flex-col relative">
+        {/* Main board content */}
+        <SortableContext items={columnItems} strategy={horizontalListSortingStrategy}>
+          <div className="flex space-x-4 overflow-x-auto board-container">
+            {renderColumns}
+            <div className="w-64 flex-shrink-0">
+              {isAddingColumn ? (
+                <div ref={formRef} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                  <input
+                    type="text"
+                    value={newColumnName}
+                    onChange={(e) => {
+                      setNewColumnName(e.target.value);
                       setErrorMessage('');
                     }}
-                    className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
-                    aria-label="Hủy thêm cột"
+                    placeholder="Nhập tên cột..."
+                    className="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    autoFocus
+                    aria-label="Nhập tên cột mới"
+                  />
+                  <div className="flex justify-end space-x-2 mt-2">
+                    <button
+                      onClick={handleAddColumn}
+                      className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
+                      aria-label="Xác nhận thêm cột"
+                    >
+                      <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAddingColumn(false);
+                        setNewColumnName('');
+                        setErrorMessage('');
+                      }}
+                      className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
+                      aria-label="Hủy thêm cột"
+                    >
+                      <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingColumn(true)}
+                  className="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                  aria-label="Thêm cột mới"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </SortableContext>
+
+        {/* Floating Teams Button that's always visible in the bottom-right corner */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="relative">
+            <button
+              ref={menuButtonRef}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full shadow-lg"
+              aria-label="Teams menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+              </svg>
+            </button>
+            
+            {/* Team menu popover */}
+            {isMenuOpen && (
+              <div
+                ref={menuRef}
+                className="absolute bottom-14 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-3 w-60"
+              >
+                <div className="flex justify-between items-center mb-2 border-b pb-2 dark:border-gray-700">
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{users.length} Teams</span>
+                  <button
+                    onClick={() => setIsAddUserModalOpen(true)}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </button>
                 </div>
-                {errorMessage && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onViewTeam();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                >
+                  View Team Members
+                </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setIsAddingColumn(true)}
-                className="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
-                aria-label="Thêm cột mới"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
             )}
           </div>
         </div>
-      </SortableContext>
-      <DragOverlay>
-        {activeTask ? (
-          <Task task={activeTask} isOverlay onClick={() => {}} columnId={activeTask.status} onEdit={onEditTask} onDelete={() => {}} />
-        ) : activeColumn ? (
-          <Column
-            column={activeColumn}
-            tasks={tasks.filter(task => task.status === activeColumn.id)}
-            openTaskModal={openTaskModal}
-            setEditingTask={setEditingTask}
-            updateColumn={updateColumn}
-            columns={columns}
-            isOverlay
-            onDeleteTask={onDeleteTask}
-            onDeleteColumn={handleDeleteColumn}
-            updateTask={updateTask}
-            onEditTask={onEditTask}
-            onOpenSubtaskModal={onOpenSubtaskModal}
-          />
-        ) : null}
-      </DragOverlay>
-      {isDeleteColumnModalOpen && (
-        <DeleteColumnModal
-          isOpen={isDeleteColumnModalOpen}
-          onClose={() => {
-            setIsDeleteColumnModalOpen(false);
-            setColumnToDelete(null);
-          }}
-          onDelete={(columnToDelete, targetColumnId) => {
-            if (deleteColumn(columnToDelete, targetColumnId)) {
+
+        <DragOverlay>
+          {activeTask ? (
+            <Task task={activeTask} isOverlay onClick={() => {}} columnId={activeTask.status} onEdit={onEditTask} onDelete={() => {}} />
+          ) : activeColumn ? (
+            <Column
+              column={activeColumn}
+              tasks={tasks.filter(task => task.status === activeColumn.id)}
+              openTaskModal={openTaskModal}
+              setEditingTask={setEditingTask}
+              updateColumn={updateColumn}
+              columns={columns}
+              isOverlay
+              onDeleteTask={onDeleteTask}
+              onDeleteColumn={handleDeleteColumn}
+              updateTask={updateTask}
+              onEditTask={onEditTask}
+              onOpenSubtaskModal={onOpenSubtaskModal}
+            />
+          ) : null}
+        </DragOverlay>
+        {isDeleteColumnModalOpen && (
+          <DeleteColumnModal
+            isOpen={isDeleteColumnModalOpen}
+            onClose={() => {
               setIsDeleteColumnModalOpen(false);
               setColumnToDelete(null);
-            }
-          }}
-          columnToDelete={columnToDelete}
-          columns={columns}
-          tasks={tasks}
-          currentBoard={currentBoard}
-        />
-      )}
+            }}
+            onDelete={(columnToDelete, targetColumnId) => {
+              if (deleteColumn(columnToDelete, targetColumnId)) {
+                setIsDeleteColumnModalOpen(false);
+                setColumnToDelete(null);
+              }
+            }}
+            columnToDelete={columnToDelete}
+            columns={columns}
+            tasks={tasks}
+            currentBoard={currentBoard}
+          />
+        )}
+        {isAddUserModalOpen && (
+          <AddUserModal
+            isOpen={isAddUserModalOpen}
+            onClose={() => setIsAddUserModalOpen(false)}
+            onAddUser={addUserToBoard}
+          />
+        )}
+      </div>
     </DndContext>
   );
 }

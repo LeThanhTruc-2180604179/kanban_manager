@@ -64,16 +64,29 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
     };
   }, [isMenuOpen]);
 
-  // Calculate menu position when opened
   useEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect();
       setMenuPosition({
         top: rect.bottom + 5,
-        left: rect.right - 96, // 24px (menu width) with right alignment
+        left: rect.right - 96,
       });
     }
   }, [isMenuOpen]);
+
+  // Generate avatar color and initial based on email
+  const getAvatarInitial = (email) => email ? email.charAt(0).toUpperCase() : '?';
+  const getAvatarColor = (email) => {
+    let hash = 0;
+    for (let i = 0; i < email.length; i++) {
+      hash = email.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = ['#F28C82', '#FBBC04', '#34A853', '#4285F4', '#AB47BC', '#7CB342'];
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const visibleAvatars = task.assignedUsers?.slice(0, 3) || [];
+  const extraMembers = Math.max(0, (task.assignedUsers?.length || 0) - 3);
 
   return (
     <div
@@ -82,7 +95,7 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
       {...attributes}
       {...listeners}
       className={`
-        relative bg-white dark:bg-gray-700 p-4 rounded-md shadow-sm
+        relative bg-white dark:bg-gray-700 p-3 rounded-md shadow-sm
         hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200
         ${isDragging ? 'shadow-lg ring-2 ring-blue-500 ring-opacity-50' : ''}
         ${isOverlay ? 'shadow-xl ring-2 ring-blue-500 cursor-grabbing' : 'cursor-grab'}
@@ -116,7 +129,7 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
         <div className="relative">
           <h3
             className="text-sm font-medium text-gray-800 dark:text-white mb-2 pr-6 break-words line-clamp-3"
-            title={task.title} // Tooltip with full title on hover
+            title={task.title}
           >
             {task.title}
           </h3>
@@ -128,9 +141,25 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
               style={{ width: `${totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0}%` }}
             ></div>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
-            {completedSubtasks}/{totalSubtasks} subtasks
-          </span>
+          <div className="flex justify-between items-center mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <span>{completedSubtasks}/{totalSubtasks} subtasks</span>
+            <div className="flex -space-x-2">
+              {visibleAvatars.map((email, idx) => (
+                <div
+                  key={idx}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                  style={{ backgroundColor: getAvatarColor(email), zIndex: visibleAvatars.length - idx }}
+                >
+                  {getAvatarInitial(email)}
+                </div>
+              ))}
+              {extraMembers > 0 && (
+                <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-medium">
+                  +{extraMembers}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       <div className="absolute top-2 right-2">
@@ -147,38 +176,38 @@ export default function Task({ task, onClick, columnId, isOverlay, index, totalT
             <div className="w-3 h-0.5 bg-gray-500 mb-0.5"></div>
             <div className="w-3 h-0.5 bg-gray-500"></div>
           </button>
-       {isMenuOpen && (
-  <div
-    ref={menuRef}
-    className="w-24 bg-gray-900 rounded shadow-lg z-50"
-    style={{
-      position: 'fixed',
-      top: `${menuPosition.top}px`,
-      left: `${menuPosition.left}px`,
-    }}
-  >
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setIsMenuOpen(false);
-        onEdit(task);
-      }}
-      className="w-full text-left px-3 py-1 text-sm text-blue-400 hover:bg-gray-800 rounded"
-    >
-      Edit
-    </button>
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setIsMenuOpen(false);
-        onDelete(task);
-      }}
-      className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-800 rounded"
-    >
-      Delete
-    </button>
-  </div>
-)}
+          {isMenuOpen && (
+            <div
+              ref={menuRef}
+              className="w-24 bg-gray-900 rounded shadow-lg z-50"
+              style={{
+                position: 'fixed',
+                top: `${menuPosition.top}px`,
+                left: `${menuPosition.left}px`,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(false);
+                  onEdit(task);
+                }}
+                className="w-full text-left px-3 py-1 text-sm text-blue-400 hover:bg-gray-800 rounded"
+              >
+                Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(false);
+                  onDelete(task);
+                }}
+                className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-800 rounded"
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
