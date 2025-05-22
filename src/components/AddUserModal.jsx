@@ -18,7 +18,7 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-            Add people to board
+            Thêm thành viên vào dự án
           </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-            Names or emails *
+            Tên hoặc emails *
           </label>
           <input
             type="text"
@@ -38,17 +38,7 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
             placeholder="e.g., Maria, maria@company.com"
           />
         </div>
-        <div className="mb-4 flex space-x-2">
-          <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-            Google
-          </button>
-          <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-            Slack
-          </button>
-          <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-            Microsoft
-          </button>
-        </div>
+      
         <p className="text-gray-500 dark:text-gray-400 text-xs mb-4">
           This site is protected by reCAPTCHA and the Google{' '}
           <a href="#" className="underline">Privacy Policy</a> and{' '}
@@ -59,13 +49,13 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
             onClick={onClose}
             className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600"
           >
-            Cancel
+            Hủy
           </button>
           <button
             onClick={handleAdd}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Add
+            Thêm
           </button>
         </div>
       </div>

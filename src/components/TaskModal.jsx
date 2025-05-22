@@ -7,11 +7,24 @@ export default function TaskModal({ isOpen, onClose, onSave, editingTask, column
     description: '',
     status: defaultStatus || columns[0]?.id || '',
     subtasks: [],
-    priority: 'Low',
-    assignedUsers: []
+    priority: 'Medium',
+    assignedUsers: [],
+    deadline: null
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState('details');
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isPriorityDropdownOpen && !event.target.closest('.priority-dropdown')) {
+        setIsPriorityDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPriorityDropdownOpen]);
 
   useEffect(() => {
     if (editingTask) {
@@ -23,8 +36,9 @@ export default function TaskModal({ isOpen, onClose, onSave, editingTask, column
         description: '',
         status: defaultStatus || columns[0]?.id || '',
         subtasks: [],
-        priority: 'Low',
-        assignedUsers: []
+        priority: 'Medium',
+        assignedUsers: [],
+        deadline: null
       });
     }
   }, [editingTask, isOpen, columns, defaultStatus]);
@@ -89,8 +103,90 @@ export default function TaskModal({ isOpen, onClose, onSave, editingTask, column
       return;
     }
 
+    // Validate deadline (cannot be in the past)
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+      if (deadlineDate < today) {
+        setErrorMessage('Thời gian hoàn thành không được là ngày trong quá khứ');
+        return;
+      }
+    }
+
     onSave(task);
     onClose();
+  };
+
+  // Priority options with Vietnamese labels
+  const priorityOptions = [
+    { value: 'Highest', label: 'Gấp' },
+    { value: 'High', label: 'Cao' },
+    { value: 'Medium', label: 'Trung Bình' },
+    { value: 'Low', label: 'Thấp' },
+    { value: 'Lowest', label: 'Thấp Nhất' }
+  ];
+
+  const getPriorityLabel = (value) => {
+    const option = priorityOptions.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
+  const PriorityIcon = ({ priority, className = "" }) => {
+    const iconProps = {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      className: className
+    };
+
+    switch (priority) {
+      case 'Highest':
+        return (
+          <svg {...iconProps} className={`text-red-600 ${className}`}>
+            <path d="M7 17L17 7" />
+            <path d="M7 7h10v10" />
+          </svg>
+        );
+      case 'High':
+        return (
+          <svg {...iconProps} className={`text-red-500 ${className}`}>
+            <path d="M12 19V5" />
+            <path d="M5 12l7-7 7 7" />
+          </svg>
+        );
+      case 'Medium':
+        return (
+          <svg {...iconProps} className={`text-orange-500 ${className}`}>
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <path d="M9 9h6v6H9z" />
+          </svg>
+        );
+      case 'Low':
+        return (
+          <svg {...iconProps} className={`text-blue-500 ${className}`}>
+            <path d="M12 5v14" />
+            <path d="M19 12l-7 7-7-7" />
+          </svg>
+        );
+      case 'Lowest':
+        return (
+          <svg {...iconProps} className={`text-green-500 ${className}`}>
+            <path d="M17 7L7 17" />
+            <path d="M17 17H7V7" />
+          </svg>
+        );
+      default:
+        return (
+          <svg {...iconProps} className={`text-gray-400 ${className}`}>
+            <circle cx="12" cy="12" r="1" />
+          </svg>
+        );
+    }
   };
 
   if (!isOpen) return null;
@@ -250,24 +346,55 @@ export default function TaskModal({ isOpen, onClose, onSave, editingTask, column
               {/* Right Column */}
               <div className="col-span-1 space-y-3">
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Priority</label>
-                  <div className="flex space-x-2">
-                    {['Low', 'Medium', 'High'].map((priority) => (
-                      <button
-                        key={priority}
-                        type="button"
-                        onClick={() => setTask(prev => ({ ...prev, priority }))}
-                        className={`flex-1 p-1.5 rounded-md text-center text-sm font-medium transition-colors
-                          ${task.priority === priority
-                            ? (priority === 'Low' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                               priority === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                          }`}
-                      >
-                        {priority}
-                      </button>
-                    ))}
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Thời Gian Hoàn Thành</label>
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={task.deadline || ''}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm"
+                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Mức Độ Ưu Tiên</label>
+                  <div className="relative priority-dropdown">
+                    <div
+                      onClick={() => setIsPriorityDropdownOpen(!isPriorityDropdownOpen)}
+                      className="w-full p-2 pl-8 pr-8 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm cursor-pointer flex items-center justify-between"
+                    >
+                      <span>{getPriorityLabel(task.priority)}</span>
+                    </div>
+                    <div className="absolute left-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <PriorityIcon priority={task.priority} />
+                    </div>
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${isPriorityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    
+                    {isPriorityDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+                        {priorityOptions.map((option) => (
+                          <div
+                            key={option.value}
+                            onClick={() => {
+                              setTask(prev => ({ ...prev, priority: option.value }));
+                              setIsPriorityDropdownOpen(false);
+                            }}
+                            className={`p-2 pl-8 pr-4 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer flex items-center text-sm relative
+                              ${task.priority === option.value ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-white'}`}
+                          >
+                            <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                              <PriorityIcon priority={option.value} />
+                            </div>
+                            <span>{option.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

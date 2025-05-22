@@ -116,11 +116,13 @@ export default function Board({
 
     let newStatus = activeTaskData.status;
     let newPosition = 0;
+    let isCompleted = activeTaskData.completed;
 
     if (overId.includes('-droppable')) {
       newStatus = overId.replace('-droppable', '');
       const destinationTasks = tasks.filter(t => t.status === newStatus && t.boardId === currentBoard);
       newPosition = destinationTasks.length;
+      isCompleted = columns.find(col => col.id === newStatus)?.isDone || false;
     } else {
       const overTask = tasks.find(t => t.id === overId);
       if (overTask) {
@@ -128,6 +130,7 @@ export default function Board({
         const destinationTasks = tasks.filter(t => t.status === newStatus && t.boardId === currentBoard);
         const overIndex = destinationTasks.findIndex(t => t.id === overId);
         newPosition = overIndex >= 0 ? overIndex : destinationTasks.length;
+        isCompleted = columns.find(col => col.id === newStatus)?.isDone || false;
         if (activeTaskData.status === newStatus) {
           const oldIndex = tasks.findIndex(t => t.id === activeId);
           const newIndex = tasks.findIndex(t => t.id === overId);
@@ -135,6 +138,7 @@ export default function Board({
             const movedTasks = arrayMove(tasks, oldIndex, newIndex).map((task, idx) => ({
               ...task,
               position: idx,
+              completed: columns.find(col => col.id === newStatus)?.isDone || task.completed
             }));
             moveTask(movedTasks, currentBoard);
             setActiveTask(null);
@@ -145,7 +149,7 @@ export default function Board({
     }
 
     const updatedTasks = tasks.map(t =>
-      t.id === activeId ? { ...t, status: newStatus, position: newPosition } : t
+      t.id === activeId ? { ...t, status: newStatus, position: newPosition, completed: isCompleted } : t
     );
     moveTask(updatedTasks, currentBoard);
     setActiveTask(null);
@@ -163,7 +167,7 @@ export default function Board({
     }
 
     try {
-      addColumn({ id: `col-${Date.now()}`, name: newColumnName.trim() });
+      addColumn({ id: `col-${Date.now()}`, name: newColumnName.trim(), isDone: false });
       setNewColumnName('');
       setIsAddingColumn(false);
       setErrorMessage('');
@@ -191,7 +195,7 @@ export default function Board({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.addEventListener('mousedown', handleClickOutside);
   }, [isAddingColumn, isMenuOpen]);
 
   const columnItems = useMemo(() => columns.map(col => col.id), [columns]);
@@ -336,7 +340,15 @@ export default function Board({
 
         <DragOverlay>
           {activeTask ? (
-            <Task task={activeTask} isOverlay onClick={() => {}} columnId={activeTask.status} onEdit={onEditTask} onDelete={() => {}} />
+            <Task 
+              task={activeTask} 
+              isOverlay 
+              onClick={() => {}} 
+              columnId={activeTask.status} 
+              onEdit={onEditTask} 
+              onDelete={() => {}} 
+              isDoneColumn={columns.find(col => col.id === activeTask.status)?.isDone || false}
+            />
           ) : activeColumn ? (
             <Column
               column={activeColumn}

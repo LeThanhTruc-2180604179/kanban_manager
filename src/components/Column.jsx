@@ -169,13 +169,20 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
         </div>
       ) : (
         <div className="flex justify-between items-center mb-4">
-          <h2
-            onClick={handleEditColumn}
-            className="text-base font-medium text-gray-800 dark:text-white cursor-pointer"
-            aria-label={`Chỉnh sửa tên cột ${column.name}`}
-          >
-            {column.name} {tasks.length > 0 && <span className="text-gray-500 text-sm ml-1">({tasks.length})</span>}
-          </h2>
+          <div className="flex items-center space-x-2">
+            <h2
+              onClick={handleEditColumn}
+              className="text-base font-medium text-gray-800 dark:text-white cursor-pointer"
+              aria-label={`Chỉnh sửa tên cột ${column.name}`}
+            >
+              {column.name} {tasks.length > 0 && <span className="text-gray-500 text-sm ml-1">({tasks.length})</span>}
+            </h2>
+            {column.isDone && (
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
           <div className="relative">
             <button
               ref={menuButtonRef}
@@ -222,6 +229,7 @@ export default function Column({ column, tasks, openTaskModal, setEditingTask, u
                 totalTasks={sortedTasks.length}
                 onDelete={onDeleteTask}
                 onEdit={onEditTask}
+                isDoneColumn={column.isDone} // Pass isDone status to Task
               />
             ))
           ) : (

@@ -13,9 +13,9 @@ export function useBoard() {
 
   const addBoard = (newBoard) => {
     const newColumns = [
-      { id: `col-${newBoard.id}-todo`, name: 'To Do' },
-      { id: `col-${newBoard.id}-progress`, name: 'Progress' },
-      { id: `col-${newBoard.id}-done`, name: 'Done' },
+      { id: `col-${newBoard.id}-todo`, name: 'To Do', isDone: false },
+      { id: `col-${newBoard.id}-progress`, name: 'Progress', isDone: false },
+      { id: `col-${newBoard.id}-done`, name: 'Done', isDone: true },
     ];
     const updatedBoards = [...boards, { ...newBoard, columns: newColumns, users: [] }];
     setBoards(updatedBoards);
@@ -35,19 +35,25 @@ export function useBoard() {
 
   const addTask = (newTask) => {
     const columnTasks = tasks.filter(t => t.status === newTask.status && t.boardId === currentBoard);
+    const isDoneColumn = currentColumns.find(col => col.id === newTask.status)?.isDone;
     setTasks([...tasks, { 
       ...newTask, 
       position: columnTasks.length, 
       boardId: currentBoard,
-      assignedUsers: newTask.assignedUsers || [] // Ensure assignedUsers is included
+      assignedUsers: newTask.assignedUsers || [],
+      deadline: newTask.deadline || null,
+      completed: isDoneColumn || false // Mark as completed if in Done column
     }]);
   };
 
   const updateTask = (id, updatedTask) => {
+    const isDoneColumn = currentColumns.find(col => col.id === updatedTask.status)?.isDone;
     setTasks(tasks.map(task => task.id === id ? { 
       ...task, 
       ...updatedTask,
-      assignedUsers: updatedTask.assignedUsers || [] // Ensure assignedUsers is preserved
+      assignedUsers: updatedTask.assignedUsers || [],
+      deadline: updatedTask.deadline || null,
+      completed: isDoneColumn || updatedTask.completed || false // Update completion status
     } : task));
   };
 
@@ -66,7 +72,12 @@ export function useBoard() {
         tasksInColumn.forEach((task, index) => {
           const taskIndex = updatedTasks.findIndex(t => t.id === task.id);
           if (taskIndex !== -1) {
-            updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], position: index };
+            const isDoneColumn = currentColumns.find(col => col.id === columnId)?.isDone;
+            updatedTasks[taskIndex] = { 
+              ...updatedTasks[taskIndex], 
+              position: index,
+              completed: isDoneColumn || updatedTasks[taskIndex].completed
+            };
           }
         });
       });
@@ -74,8 +85,13 @@ export function useBoard() {
     } else {
       const taskIndex = tasks.findIndex(t => t.id === taskIdOrTasks);
       if (taskIndex !== -1) {
+        const isDoneColumn = currentColumns.find(col => col.id === tasks[taskIndex].status)?.isDone;
         const updatedTasks = [...tasks];
-        updatedTasks[taskIndex] = { ...updatedTasks[taskIndex], position: 0 };
+        updatedTasks[taskIndex] = { 
+          ...updatedTasks[taskIndex], 
+          position: 0,
+          completed: isDoneColumn || updatedTasks[taskIndex].completed
+        };
         setTasks(updatedTasks);
       }
     }
@@ -86,15 +102,27 @@ export function useBoard() {
     if (existingColumn) {
       throw new Error('Tên cột đã tồn tại');
     }
+    // If no Done column exists, mark the new column as Done
+    const hasDoneColumn = currentColumns.some(col => col.isDone);
     setBoards(boards.map(board =>
-      board.id === currentBoard ? { ...board, columns: [...(board.columns || []), newColumn] } : board
+      board.id === currentBoard ? { 
+        ...board, 
+        columns: [...(board.columns || []), { ...newColumn, isDone: !hasDoneColumn }]
+      } : board
     ));
   };
 
   const updateColumn = (idOrColumns, updatedColumn) => {
     if (Array.isArray(idOrColumns)) {
+      // Ensure exactly one column is marked as Done
+      const updatedColumns = idOrColumns.map((col, idx) => ({
+        ...col,
+        isDone: idx === idOrColumns.length - 1 && !idOrColumns.some(c => c.isDone)
+          ? true
+          : col.isDone
+      }));
       setBoards(boards.map(board =>
-        board.id === currentBoard ? { ...board, columns: idOrColumns } : board
+        board.id === currentBoard ? { ...board, columns: updatedColumns } : board
       ));
     } else {
       const existingColumn = currentColumns.find(col => col.id !== idOrColumns && col.name.toLowerCase() === updatedColumn.name.toLowerCase());
@@ -111,18 +139,35 @@ export function useBoard() {
 
   const deleteColumn = (columnToDelete, targetColumnId) => {
     if (currentColumns.length <= 1) return false;
+    const isDoneColumn = columnToDelete.isDone;
+    const updatedColumns = currentColumns.filter(col => col.id !== columnToDelete.id);
+    
+    // Reassign isDone to another column if the deleted column was Done
+    if (isDoneColumn && updatedColumns.length > 0) {
+      updatedColumns[0].isDone = true;
+    }
+    
     const updatedBoards = boards.map(board =>
       board.id === currentBoard
-        ? { ...board, columns: board.columns.filter(col => col.id !== columnToDelete.id) }
+        ? { ...board, columns: updatedColumns }
         : board
     );
     setBoards(updatedBoards);
+    
     if (targetColumnId) {
       const tasksInDeletedColumn = tasks.filter(task => task.status === columnToDelete.id && task.boardId === currentBoard);
       if (tasksInDeletedColumn.length > 0) {
         const tasksInTargetColumn = tasks.filter(task => task.status === targetColumnId && task.boardId === currentBoard);
+        const isTargetDone = currentColumns.find(col => col.id === targetColumnId)?.isDone;
         const updatedTasks = tasks.map(task =>
-          tasksInDeletedColumn.includes(task) ? { ...task, status: targetColumnId, position: tasksInTargetColumn.length + tasksInDeletedColumn.indexOf(task) } : task
+          tasksInDeletedColumn.includes(task) 
+            ? { 
+                ...task, 
+                status: targetColumnId, 
+                position: tasksInTargetColumn.length + tasksInDeletedColumn.indexOf(task),
+                completed: isTargetDone || task.completed
+              } 
+            : task
         );
         setTasks(updatedTasks);
       }
