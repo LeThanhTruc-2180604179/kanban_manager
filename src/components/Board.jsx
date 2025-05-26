@@ -5,6 +5,7 @@ import Column from './Column';
 import Task from './Task';
 import DeleteColumnModal from './DeleteColumnModal';
 import AddUserModal from './AddUserModal';
+import DeleteUserModal from './DeleteUserModal';
 
 export default function Board({
   columns,
@@ -22,6 +23,8 @@ export default function Board({
   onOpenSubtaskModal,
   users,
   addUserToBoard,
+  removeUserFromBoard,
+  getUserTaskCount,
   onViewTeam
 }) {
   const [activeTask, setActiveTask] = useState(null);
@@ -32,6 +35,8 @@ export default function Board({
   const [isDeleteColumnModalOpen, setIsDeleteColumnModalOpen] = useState(false);
   const [columnToDelete, setColumnToDelete] = useState(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const formRef = useRef(null);
   const menuRef = useRef(null);
@@ -182,6 +187,14 @@ export default function Board({
     setIsDeleteColumnModalOpen(true);
   };
 
+  const handleConfirmDeleteUser = () => {
+    if (userToDelete) {
+      removeUserFromBoard(userToDelete.email);
+      setIsDeleteUserModalOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isAddingColumn && formRef.current && !formRef.current.contains(event.target)) {
@@ -195,7 +208,7 @@ export default function Board({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isAddingColumn, isMenuOpen]);
 
   const columnItems = useMemo(() => columns.map(col => col.id), [columns]);
@@ -233,7 +246,6 @@ export default function Board({
       onDragCancel={handleDragCancel}
     >
       <div className="flex flex-col relative">
-        {/* Main board content */}
         <SortableContext items={columnItems} strategy={horizontalListSortingStrategy}>
           <div className="flex space-x-4 overflow-x-auto board-container">
             {renderColumns}
@@ -293,7 +305,6 @@ export default function Board({
           </div>
         </SortableContext>
 
-        {/* Floating Teams Button that's always visible in the bottom-right corner */}
         <div className="fixed bottom-6 right-6 z-50">
           <div className="relative">
             <button
@@ -307,7 +318,6 @@ export default function Board({
               </svg>
             </button>
             
-            {/* Team menu popover */}
             {isMenuOpen && (
               <div
                 ref={menuRef}
@@ -390,6 +400,18 @@ export default function Board({
             isOpen={isAddUserModalOpen}
             onClose={() => setIsAddUserModalOpen(false)}
             onAddUser={addUserToBoard}
+          />
+        )}
+        {isDeleteUserModalOpen && (
+          <DeleteUserModal
+            isOpen={isDeleteUserModalOpen}
+            onClose={() => {
+              setIsDeleteUserModalOpen(false);
+              setUserToDelete(null);
+            }}
+            onDelete={handleConfirmDeleteUser}
+            userEmail={userToDelete?.email || ''}
+            taskCount={userToDelete?.taskCount || 0}
           />
         )}
       </div>

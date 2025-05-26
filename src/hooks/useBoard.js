@@ -42,7 +42,7 @@ export function useBoard() {
       boardId: currentBoard,
       assignedUsers: newTask.assignedUsers || [],
       deadline: newTask.deadline || null,
-      completed: isDoneColumn || false // Mark as completed if in Done column
+      completed: isDoneColumn || false
     }]);
   };
 
@@ -53,7 +53,7 @@ export function useBoard() {
       ...updatedTask,
       assignedUsers: updatedTask.assignedUsers || [],
       deadline: updatedTask.deadline || null,
-      completed: isDoneColumn || updatedTask.completed || false // Update completion status
+      completed: isDoneColumn || updatedTask.completed || false
     } : task));
   };
 
@@ -102,7 +102,6 @@ export function useBoard() {
     if (existingColumn) {
       throw new Error('Tên cột đã tồn tại');
     }
-    // If no Done column exists, mark the new column as Done
     const hasDoneColumn = currentColumns.some(col => col.isDone);
     setBoards(boards.map(board =>
       board.id === currentBoard ? { 
@@ -114,7 +113,6 @@ export function useBoard() {
 
   const updateColumn = (idOrColumns, updatedColumn) => {
     if (Array.isArray(idOrColumns)) {
-      // Ensure exactly one column is marked as Done
       const updatedColumns = idOrColumns.map((col, idx) => ({
         ...col,
         isDone: idx === idOrColumns.length - 1 && !idOrColumns.some(c => c.isDone)
@@ -142,7 +140,6 @@ export function useBoard() {
     const isDoneColumn = columnToDelete.isDone;
     const updatedColumns = currentColumns.filter(col => col.id !== columnToDelete.id);
     
-    // Reassign isDone to another column if the deleted column was Done
     if (isDoneColumn && updatedColumns.length > 0) {
       updatedColumns[0].isDone = true;
     }
@@ -183,6 +180,29 @@ export function useBoard() {
     ));
   };
 
+  const removeUserFromBoard = (email) => {
+    const updatedBoards = boards.map(board =>
+      board.id === currentBoard
+        ? { ...board, users: board.users.filter(user => user.email !== email) }
+        : board
+    );
+    setBoards(updatedBoards);
+
+    const updatedTasks = tasks.map(task =>
+      task.boardId === currentBoard
+        ? { ...task, assignedUsers: task.assignedUsers.filter(userEmail => userEmail !== email) }
+        : task
+    );
+    setTasks(updatedTasks);
+  };
+
+  const getUserTaskCount = (email) => {
+    return tasks.filter(task => 
+      task.boardId === currentBoard && 
+      task.assignedUsers.includes(email)
+    ).length;
+  };
+
   const boardTasks = tasks
     .filter(task => task.boardId === currentBoard)
     .sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -204,6 +224,8 @@ export function useBoard() {
     updateColumn,
     deleteColumn,
     users: currentUsers,
-    addUserToBoard
+    addUserToBoard,
+    removeUserFromBoard,
+    getUserTaskCount
   };
 }

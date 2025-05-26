@@ -1,12 +1,105 @@
-# React + Vite
+*******************************
+*        KANBAN MANAGER       *
+*******************************
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ứng dụng quản lý công việc theo phương pháp Kanban  
+Xây dựng bằng React, Tailwind CSS và DND Kit  
 
-Currently, two official plugins are available:
+*******************************
+*        BẮT ĐẦU SỬ DỤNG       *
+*******************************
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* Yêu cầu hệ thống:
+  - Node.js >= 14
+  - npm
+* Cài đặt và run:
+  1. Di chuyển vào thư mục: cd kanban-manager
+  2. Cài đặt: npm install 
+  3. Chạy: npm start 
 
-## Expanding the ESLint configuration
+*******************************
+*   TÍNH NĂNG & HƯỚNG DẪN     *
+*******************************
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* 1. Quản lý Bảng làm việc (Board)
+
+  - Tạo Bảng mới:
+    + Nhấn "Thêm bảng mới" ở thanh bên
+    + Nhập tên bảng (VD: Dự án thiết kế website)
+    + Nhấn "Tạo"
+    + Ghi chú: Tự động có 3 cột: To Do, Progress, Done
+
+  - Quản lý Bảng:
+    + Đổi tên: Menu (⋮) → Chọn "Đổi tên"
+    + Xóa bảng: Menu (⋮) → Chọn "Xóa" → Gõ "delete" để xác nhận
+    + Chuyển đổi bảng: Nhấn vào tên bảng ở thanh bên
+
+* 2. Quản lý Thành viên
+
+  - Thêm thành viên:
+    + Nhấn nút Teams (👥)
+    + Nhấn "Thêm người"
+    + Nhập email thành viên (VD: nguyen@company.com)
+    + Nhấn "Thêm"
+
+  - Xem danh sách thành viên:
+    + Nhấn nút Teams (👥)
+    + Chọn "Xem thành viên"
+    + Dùng thanh tìm kiếm để lọc
+
+* 3. Quản lý Cột công việc
+
+  - Thêm cột mới:
+    + Nhấn "+" ở cuối danh sách cột
+    + Nhập tên cột
+    + Nhấn ✓ để xác nhận
+
+  - Chỉnh sửa cột:
+    + Đổi tên: Click vào tên cột → sửa → ✓
+    + Xóa: Menu (⋮) → Xóa → Phải chọn cột đích
+    + Không thể xóa cột cuối cùng
+
+  - Sắp xếp cột:
+    + Kéo thả để sắp xếp
+    + Cột cuối bên phải = trạng thái Hoàn thành
+
+* 4. Quản lý Công việc
+
+  - Tạo công việc mới:
+    + Nhấn "+ Tạo công việc"
+    + Nhập:
+      • Tiêu đề (bắt buộc)
+      • Mô tả
+      • Hạn chót
+      • Độ ưu tiên (Gấp/Cao/Trung bình/Thấp)
+      • Gán người
+      • Thêm công việc con (nếu cần)
+
+  - Quản lý công việc:
+    + Sửa: Menu (⋮) → Sửa
+    + Xóa: Menu (⋮) → Xóa → Gõ "delete" để xác nhận
+
+  - Di chuyển công việc:
+    + Kéo thả giữa các cột
+    + Vào cột "Done" sẽ tự đánh dấu hoàn thành
+
+  - Theo dõi tiến độ:
+    + Xem thanh tiến độ công việc con
+    + Click công việc để cập nhật
+
+* 5. Tính năng khác
+
+  - Chế độ tối: Gạt công tắc trên header
+  - Giao diện responsive:
+    + Thanh bên thu gọn trên thiết bị di động
+    + Cuộn ngang cột trên màn hình nhỏ
+
+*******************************
+*     QUY TRÌNH ĐỀ XUẤT       *
+*******************************
+
+1. Tạo bảng mới cho dự án  
+2. Thêm thành viên vào bảng  
+3. Tùy chỉnh cột theo quy trình làm việc  
+4. Tạo và phân công công việc  
+5. Kéo thả công việc khi tiến độ thay đổi  

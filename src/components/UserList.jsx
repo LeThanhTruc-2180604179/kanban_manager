@@ -1,14 +1,12 @@
 import { useState } from 'react';
 
-export default function UserList({ users, onBack, onAddUser, setIsAddUserModalOpen }) {
+export default function UserList({ users, onBack, onAddUser, setIsAddUserModalOpen, onRemoveUser, getUserTaskCount, setIsDeleteUserModalOpen, setUserToDelete }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter users based on search term
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Function to generate avatar initial and color (reusing logic from SubtaskCompletionModal.jsx)
   const getAvatarInitial = (email) => email ? email.charAt(0).toUpperCase() : '?';
   const getAvatarColor = (email) => {
     let hash = 0;
@@ -17,6 +15,16 @@ export default function UserList({ users, onBack, onAddUser, setIsAddUserModalOp
     }
     const colors = ['#F28C82', '#FBBC04', '#34A853', '#4285F4', '#AB47BC', '#7CB342'];
     return colors[Math.abs(hash) % colors.length];
+  };
+
+  const handleRemoveUser = (email) => {
+    const taskCount = getUserTaskCount(email);
+    if (taskCount > 0) {
+      setUserToDelete({ email, taskCount });
+      setIsDeleteUserModalOpen(true);
+    } else {
+      onRemoveUser(email);
+    }
   };
 
   return (
@@ -61,22 +69,31 @@ export default function UserList({ users, onBack, onAddUser, setIsAddUserModalOp
           {filteredUsers.map(user => (
             <div
               key={user.id}
-              className="flex items-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow-sm"
+              className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow-sm"
             >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium mr-4"
-                style={{ backgroundColor: getAvatarColor(user.email) }}
+              <div className="flex items-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium mr-4"
+                  style={{ backgroundColor: getAvatarColor(user.email) }}
+                >
+                  {getAvatarInitial(user.email)}
+                </div>
+                <div>
+                  <p className="text-gray-800 dark:text-white font-medium">
+                    {user.email.split('@')[0]}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleRemoveUser(user.email)}
+                className="text-red-500 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium"
+                aria-label={`Remove ${user.email} from project`}
               >
-                {getAvatarInitial(user.email)}
-              </div>
-              <div>
-                <p className="text-gray-800 dark:text-white font-medium">
-                  {user.email.split('@')[0]} {/* Display name before @ */}
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {user.email}
-                </p>
-              </div>
+                Remove
+              </button>
             </div>
           ))}
         </div>

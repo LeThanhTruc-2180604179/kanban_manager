@@ -6,10 +6,10 @@ import TaskModal from './components/TaskModal';
 import DeleteTaskModal from './components/DeleteTaskModal';
 import SubtaskCompletionModal from './components/SubtaskCompletionModal';
 import UserList from './components/UserList';
-import AddUserModal from './components/AddUserModal'; // Import AddUserModal
+import AddUserModal from './components/AddUserModal';
+import DeleteUserModal from './components/DeleteUserModal';
 import { useTheme } from './hooks/useTheme';
 import { useBoard } from './hooks/useBoard';
-
 
 export default function App() {
   const { darkMode, toggleDarkMode } = useTheme();
@@ -30,7 +30,9 @@ export default function App() {
     updateColumn,
     deleteColumn,
     users,
-    addUserToBoard
+    addUserToBoard,
+    removeUserFromBoard,
+    getUserTaskCount
   } = useBoard();
 
   const [boards, setBoards] = useState(initialBoards);
@@ -43,7 +45,9 @@ export default function App() {
   const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showUserList, setShowUserList] = useState(false);
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false); // State for AddUserModal
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     setBoards(initialBoards);
@@ -58,7 +62,11 @@ export default function App() {
       alert('Vui lòng tạo một bảng trước khi thêm nhiệm vụ.');
       return;
     }
-    setNewTaskColumnId(columnId);
+    if (columns.length === 0) {
+      alert('Vui lòng tạo ít nhất một cột trước khi thêm nhiệm vụ.');
+      return;
+    }
+    setNewTaskColumnId(columnId || columns[0].id);
     setIsTaskModalOpen(true);
   };
 
@@ -70,18 +78,27 @@ export default function App() {
 
   const handleSaveTask = (task) => {
     if (columns.length === 0) {
-      alert('Vui lòng tạo ít nhất một cột trước khi thêm task.');
+      alert('Không thể lưu nhiệm vụ: Không có cột nào tồn tại.');
+      return;
+    }
+
+    const status = task.status || newTaskColumnId || columns[0].id;
+
+    if (!status) {
+      alert('Không thể lưu nhiệm vụ: Không tìm thấy cột hợp lệ.');
       return;
     }
 
     if (editingTask) {
-      updateTask(task.id, task);
+      updateTask(task.id, { ...task, status });
     } else {
       addTask({
         ...task,
         boardId: currentBoard,
-        status: newTaskColumnId || columns[0]?.id,
-        position: tasks.filter(t => t.status === (newTaskColumnId || columns[0]?.id) && t.boardId === currentBoard).length
+        status,
+        position: tasks.filter(t => t.status === status && t.boardId === currentBoard).length,
+        assignedUsers: task.assignedUsers || [],
+        deadline: task.deadline || null
       });
     }
     closeTaskModal();
@@ -173,7 +190,11 @@ export default function App() {
                 users={users}
                 onBack={handleBackToBoard}
                 onAddUser={addUserToBoard}
-                setIsAddUserModalOpen={setIsAddUserModalOpen} // Pass modal control
+                onRemoveUser={removeUserFromBoard}
+                getUserTaskCount={getUserTaskCount}
+                setIsDeleteUserModalOpen={setIsDeleteUserModalOpen}
+                setUserToDelete={setUserToDelete}
+                setIsAddUserModalOpen={setIsAddUserModalOpen}
               />
             ) : (
               <div className="inline-flex space-x-6 min-w-max">
@@ -193,6 +214,8 @@ export default function App() {
                   onOpenSubtaskModal={handleOpenSubtaskModal}
                   users={users}
                   addUserToBoard={addUserToBoard}
+                  removeUserFromBoard={removeUserFromBoard}
+                  getUserTaskCount={getUserTaskCount}
                   onViewTeam={handleViewTeam}
                 />
               </div>
@@ -244,7 +267,25 @@ export default function App() {
           onAddUser={addUserToBoard}
         />
       )}
+
+      {isDeleteUserModalOpen && (
+        <DeleteUserModal
+          isOpen={isDeleteUserModalOpen}
+          onClose={() => {
+            setIsDeleteUserModalOpen(false);
+            setUserToDelete(null);
+          }}
+          onDelete={() => {
+            if (userToDelete) {
+              removeUserFromBoard(userToDelete.email);
+              setIsDeleteUserModalOpen(false);
+              setUserToDelete(null);
+            }
+          }}
+          userEmail={userToDelete?.email || ''}
+          taskCount={userToDelete?.taskCount || 0}
+        />
+      )}
     </div>
- 
   );
 }
