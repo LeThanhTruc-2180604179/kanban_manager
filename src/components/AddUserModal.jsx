@@ -2,13 +2,17 @@ import { useState } from 'react';
 
 export default function AddUserModal({ isOpen, onClose, onAddUser }) {
   const [emailInput, setEmailInput] = useState('');
+  const [error, setError] = useState('');
 
   const handleAdd = () => {
-    if (emailInput.trim()) {
-      onAddUser(emailInput.trim());
-      setEmailInput('');
-      onClose();
+    if (!emailInput.trim()) {
+      setError('Vui lòng nhập tên hoặc email');
+      return;
     }
+    setError('');
+    onAddUser(emailInput.trim());
+    setEmailInput('');
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -33,10 +37,18 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
           <input
             type="text"
             value={emailInput}
-            onChange={(e) => setEmailInput(e.target.value)}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
+            onChange={(e) => {
+              setEmailInput(e.target.value);
+              setError('');
+            }}
+            className={`w-full p-2 border rounded dark:bg-gray-700 dark:text-white ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+            }`}
             placeholder="e.g., Maria, maria@company.com"
           />
+          {error && (
+            <p className="text-red-500 text-sm mt-1">{error}</p>
+          )}
         </div>
       
         <p className="text-gray-500 dark:text-gray-400 text-xs mb-4">
